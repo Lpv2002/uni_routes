@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Http\Resources\BrevetResource;
 use App\Models\Brevet;
 use Carbon\Carbon;
@@ -10,6 +11,9 @@ use Illuminate\Support\Facades\Storage;
 
 class BrevetController extends Controller
 {
+    const root_path = 'public/';
+    const path_imagen = 'brevet';
+
     /**
      * Display a listing of the resource.
      */
@@ -27,24 +31,23 @@ class BrevetController extends Controller
     {
         $validated_data = $request->validate([
             'nro' => ['required', 'numeric'],
-            'expiration_date' => ['required', 'date', 'date_format:d/m/Y'],
-            'broadcast_date' => ['required', 'date', 'date_format:d/m/Y'],
+            'expiration_date' => ['date', 'date_format:Y/m/d'],
+            'broadcast_date' => ['date', 'date_format:Y/m/d'],
             'category' => ['required', 'max:1'],
             'photo' => ['image'],
         ]);
 
         // Guardar solo el ID de la foto en la base de datos
-        $validated_data['photo'] = $request->photo->store('photos');
+        // $imagen_controller = new ImagenController();
+        $path = ImagenController::store('brevet', $validated_data['photo']);
 
-        // Convertir las fechas al formato correcto
-        $validated_data['expiration_date'] = Carbon::createFromFormat('d/m/Y', $validated_data['expiration_date'])->format('Y-m-d');
-        $validated_data['broadcast_date'] = Carbon::createFromFormat('d/m/Y', $validated_data['broadcast_date'])->format('Y-m-d');
+        $validated_data['photo'] = $path;
 
         $brevet = Brevet::create($validated_data);
 
         return response([
-            'brevet' => $brevet,
-            'message' => 'Datos corecto'
+            'brevet' => new BrevetResource($brevet),
+            'message' => 'Datos corectos'
         ], 201);
     }
 
@@ -55,7 +58,10 @@ class BrevetController extends Controller
     {
         $brevet = Brevet::findOrFail($id);
 
-        return response(['brevet' => $brevet, 'message' => 'Solicitud exitosa']);
+        return response([
+            'brevet' =>  new BrevetResource($brevet),
+            'message' => 'Solicitud exitosa'
+        ], 200);
     }
 
     /**
@@ -63,8 +69,6 @@ class BrevetController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $brevet = Brevet::findOrFail($id);
-
         $validated_data = $request->validate([
             'nro' => ['numeric'],
             'expiration_date' => ['date', 'date_format:Y/m/d'],
@@ -73,22 +77,23 @@ class BrevetController extends Controller
             'photo' => ['image'],
         ]);
 
-        $brevet->fill($validated_data);
+        $brevet = Brevet::findOrFail($id);
 
-        // Si se proporciona una nueva foto, actualizar el campo "photo"
+        // $brevet->fill($validated_data);
+
         if ($request->hasFile('photo')) {
-            // Eliminar la foto anterior
-            Storage::delete($brevet->photo);
+            if ($brevet->photo) {
+                ImagenController::destroy('brevet/' . $brevet->photo);
+            }
 
-            // Guardar solo el ID de la nueva foto en la base de datos
-            $brevet->photo = $request->photo->store('photos');
+            $brevet->photo = ImagenController::store('brevet', $request->photo);
         }
 
         $brevet->save();
 
         return response([
-            'brevet' => $brevet,
-            'message' => 'Datos autualizados'
+            'brevet' => new BrevetResource($brevet),
+            'message' => 'Datos actualizados'
         ], 201);
     }
 
@@ -99,11 +104,14 @@ class BrevetController extends Controller
     {
         $brevet = Brevet::findOrFail($id);
 
-        // Eliminar la foto asociada 
-        Storage::delete($brevet->photo);
+        if ($brevet->photo) {
+            ImagenController::destroy('brevet/' . $brevet->photo);
+        }
 
         $brevet->delete();
 
-        return response()->json(null, 204);
+        return response([
+            'message' => 'Brevet eliminado corectamente',
+        ], 204);
     }
 }

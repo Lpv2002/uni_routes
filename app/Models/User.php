@@ -47,4 +47,15 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    // Relaciones
+
+    /*
+    Un User tiene asociado un driver, este se usa cuando,
+    esto se realiza por User tiene la FK de user_id
+    */
+    public function driver()
+    {
+        return $this->hasOne(Driver::class);
+    }
 }

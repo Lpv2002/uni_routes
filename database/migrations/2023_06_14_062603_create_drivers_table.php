@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('drivers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained();
-            $table->string('ci');
-            $table->foreignId('car_id')->constrained();
-            $table->foreignId('brevet_id')->constrained();
+            $table->string('ci')->nullable();
+            $table->foreignId('car_id')->nullable()->constrained();
+            $table->foreignId('brevet_id')->nullable()->constrained();
             $table->timestamps();
         });
     }

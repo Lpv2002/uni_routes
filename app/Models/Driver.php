@@ -15,4 +15,13 @@ class Driver extends Model
         'car_id',
         'brevet_id',
     ];
+
+    /*
+        Un conductor le pertenece a un usuario, la relación se realiza
+        con user_id
+    */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

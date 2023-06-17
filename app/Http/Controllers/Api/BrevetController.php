@@ -5,13 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BrevetResource;
 use App\Models\Brevet;
+use App\Models\Driver;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class BrevetController extends Controller
 {
-    const root_path = 'public/';
     const path_imagen = 'brevet';
 
     /**
@@ -37,13 +37,15 @@ class BrevetController extends Controller
             'photo' => ['image'],
         ]);
 
-        // Guardar solo el ID de la foto en la base de datos
-        // $imagen_controller = new ImagenController();
-        $path = ImagenController::store('brevet', $validated_data['photo']);
+        $path = ImagenController::store(self::path_imagen, $validated_data['photo']);
 
         $validated_data['photo'] = $path;
 
         $brevet = Brevet::create($validated_data);
+
+        $driver = auth()->user->driver();
+        $driver->brever_id = $brevet->id;
+        $driver->save();
 
         return response([
             'brevet' => new BrevetResource($brevet),
@@ -83,10 +85,10 @@ class BrevetController extends Controller
 
         if ($request->hasFile('photo')) {
             if ($brevet->photo) {
-                ImagenController::destroy('brevet/' . $brevet->photo);
+                ImagenController::destroy(self::path_imagen . '/' . $brevet->photo);
             }
 
-            $brevet->photo = ImagenController::store('brevet', $request->photo);
+            $brevet->photo = ImagenController::store(self::path_imagen, $request->photo);
         }
 
         $brevet->save();
@@ -105,7 +107,7 @@ class BrevetController extends Controller
         $brevet = Brevet::findOrFail($id);
 
         if ($brevet->photo) {
-            ImagenController::destroy('brevet/' . $brevet->photo);
+            ImagenController::destroy(self::path_imagen . '/' . $brevet->photo);
         }
 
         $brevet->delete();

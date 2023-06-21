@@ -19,13 +19,21 @@ class AuthController extends Controller
         $validate_data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'register' => ['required', 'numeric'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'email' => ['required', 'email', 'max:255', 'unique:users'],
             'phone' => ['numeric'],
             'password' => ['required', 'confirmed'],
             'ci' => ['numeric'],
-            'is_student' => ['required', 'boolean'],
-            'is_driver' => ['required', 'boolean'],
+            'is_student' => ['boolean'],
+            'is_driver' => ['boolean'],
         ]);
+
+        // $validator = FacadesValidator::make($validate_data);
+        // if ($validator->fails()) {
+        //     return response([
+        //         'message' => 'Error',
+        //         'erros' => $validator->errors(),
+        //     ], 422);
+        // }
 
         // Encriptar password
         $validate_data['password'] = Hash::make($request->password);
@@ -50,8 +58,8 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $login_data = $request->validate([
-            'email' => ['required', 'string', 'email', 'max:255'],
-            'password' => ['required', 'string'],
+            'email' => ['required', 'email', 'max:255'],
+            'password' => ['required'],
         ]);
 
         if (!auth()->attempt($login_data)) {
@@ -74,7 +82,7 @@ class AuthController extends Controller
             return response()->json([
                 'message' => 'Credenciales Inválidas',
                 'errors' => [
-                    'authentication' => 'Credenciales Inválidas',
+                    'authentication' => ['Credenciales Inválidas'],
                 ],
             ], 401);
         }
